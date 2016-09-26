@@ -20,9 +20,22 @@ no warnings 'experimental';
 sub evaluate {
 	my $rpn = shift;
 
-	# ...
+	my @num;
 
-	return 0;
+	for (@$rpn) {
+		given ($_) {
+			when (/\d/) {push @num,$_}
+			when ('U+') {}
+			when ('U-') {$num[@num-1]=-$num[@num-1]}
+			when ('+') {$num[@num-2]=$num[@num-2]+$num[@num-1];pop(@num)}
+			when ('-') {$num[@num-2]=$num[@num-2]-$num[@num-1];pop(@num)}
+			when ('*') {$num[@num-2]=$num[@num-2]*$num[@num-1];pop(@num)}
+			when ('/') {$num[@num-2]=$num[@num-2]/$num[@num-1];pop(@num)}
+			when ('^') {$num[@num-2]=$num[@num-2]**$num[@num-1];pop(@num)}
+		}
+	}
+
+	return $num[0];
 }
 
 1;
