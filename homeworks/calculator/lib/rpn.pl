@@ -48,7 +48,7 @@ sub rpn_ {
 		}
 	}
 	my $done=0;
-	if ($done==0) {
+	if (!$done) {
 		for($i=$#$x,$p=0; $i!=0 && !($p==0 && ($x->[$i] eq '+' || $x->[$i] eq '-'));$i--) {
 			if ($x->[$i] eq '(') {$p++}
 			if ($x->[$i] eq ')') {$p--}
@@ -60,7 +60,7 @@ sub rpn_ {
 			@rpn = (@{rpn_(\@arr1)},@{rpn_(\@arr2)},$x->[$i]);
 		}
 	}
-	if ($done==0) {
+	if (!$done) {
 		for($i=$#$x,$p=0; $i!=0 && !($p==0 && ($x->[$i] eq '*' || $x->[$i] eq '/'));$i--) {
 			if ($x->[$i] eq '(') {$p++}
 			if ($x->[$i] eq ')') {$p--}
@@ -72,7 +72,7 @@ sub rpn_ {
 			@rpn = (@{rpn_(\@arr1)},@{rpn_(\@arr2)},$x->[$i]);
 		}
 	}
-	if ($done==0) {
+	if (!$done) {
 		for($i=0,$p=0; $i!=$#$x && !($p==0 && ($x->[$i] eq '^'));$i++) {
 			if ($x->[$i] eq '(') {$p++}
 			if ($x->[$i] eq ')') {$p--}
@@ -91,7 +91,7 @@ sub rpn_ {
 			}
 		}
 	}
-	if ($done==0) {
+	if (!$done) {
 		$done++;
 		my @arr1=@{$x}[1..$#$x];
 		@rpn = (@{rpn_(\@arr1)},$x->[0]);
