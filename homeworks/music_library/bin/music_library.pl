@@ -2,22 +2,21 @@
 
 use strict;
 use warnings;
-use Local::MusicLibrary;
+use Local::MusicLibrary::Taking;
+use Local::MusicLibrary::Processing;
+use Local::MusicLibrary::Printing;
 
 my @col;
 $#col = -1;
 my %opt;
-Local::MusicLibrary::GetOpting(\%opt, \@col);
+Local::MusicLibrary::Taking::TakeOptions(\%opt);
 
 my @arr;
 $#arr = -1;
 while (<>) {
-	my $tmp;
 	my %h;
-	$tmp = \%h;
-	Local::MusicLibrary::TakeArray $_, $tmp;
+	Local::MusicLibrary::Taking::TakeArray $_, \%h;
 	push @arr, {%h};
 }
-Local::MusicLibrary::GrepArray \@arr, \%opt;
-Local::MusicLibrary::SortArray \@arr, $opt{sort};
-Local::MusicLibrary::Print \@arr, \@col;
+Local::MusicLibrary::Processing::Process \@arr, \%opt;
+Local::MusicLibrary::Printing::Print \@arr, $opt{columns};
