@@ -2,6 +2,7 @@ package Local::MusicLibrary::Printing;
 
 use strict;
 use warnings;
+use List::MoreUtils;
 
 
 =encoding utf8
@@ -22,41 +23,24 @@ our $VERSION = '1.00';
 
 =cut
 
-my @col0 = ("band", "year", "album", "track", "format");
 
 sub Print {
 	my $ref = shift;
-	my @col;
-	ColProcess(\@col, shift);
+	my $col = shift;
 
-	if ($col[0] ne -1 && $#$ref != -1) {
+	if ($col->[0] ne -1 && $#$ref != -1) {
 
 		my %max;
-		my $sum = Maximums ($ref, \@col, \%max);
+		my $sum = Maximums ($ref, $col, \%max);
 
 		print '/', '-'x($sum), "\\\n";
-		for (my $i = 0; $i < $#$ref+1; $i++) {
-			PrintString($ref->[$i], \@col, \%max);
+		for my $i (0..$#$ref) {
+			PrintString($ref->[$i], $col, \%max);
 			if ($i != $#$ref) {
-				PrintLine($ref->[$i], \@col, \%max);
+				PrintLine($ref->[$i], $col, \%max);
 			}
 		}
 		print "\\", "-"x($sum), "/\n";
-	}
-
-}
-
-sub ColProcess {
-	my $col = shift;
-	my $c = shift;
-
-	$#$col = -1;
-
-	if ($c eq -1) {@$col = @col0}
-	elsif (!$c) {push @$col, -1}
-	else {
-		@$col = split ',', $c;
-		for (@$col) {if (!($_ ~~ @col0)) {die "Bad columns"}}
 	}
 
 }
@@ -66,10 +50,10 @@ sub Maximums {
 	my $col = shift;
 	my $max = shift;
 	my $sum = -1;
-	for (@col0) {$max->{$_} = 0}
+	for (@$col) {$max->{$_} = 0}
 	for (@$ref) {
 		my $x = $_;
-		for (@col0) {
+		for (@$col) {
 			my $l = length $x->{$_};
 			if ($l > $max->{$_}) {$max->{$_} = $l}
 		}	
@@ -92,9 +76,9 @@ sub PrintLine {
 	my $x = shift;
 	my $col = shift;
 	my $max = shift;
-	for (my $k=0; $k < $#$col+1; $k++) {
-		if ($k == 0) {print "|", "-"x($max->{$col->[$k]} + 2)}
-		else {print "+", "-"x($max->{$col->[$k]} + 2)}
+	for my $i (0..$#$col) {
+		if ($i == 0) {print "|", "-"x($max->{$col->[$i]} + 2)}
+		else {print "+", "-"x($max->{$col->[$i]} + 2)}
 		}
 	print "|\n";
 }
