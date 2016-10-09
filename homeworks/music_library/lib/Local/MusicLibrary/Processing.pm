@@ -32,17 +32,20 @@ sub TakeArray {
 }
 
 sub Process {
+	my $sort_compare = shift;
+	my $grep_compare = shift;
 	my $ref = shift;
 	my $opt = shift;
 	my $col0 = shift;
 	my $col = shift;
 	my $is_num = shift;
-	GrepArray($ref, $opt, $col0, $is_num);
-	SortArray($ref, $opt->{sort}, $col0, $is_num);
+	GrepArray($grep_compare, $ref, $opt, $col0, $is_num);
+	SortArray($sort_compare, $ref, $opt->{sort}, $col0, $is_num);
 	ColProcess($col, $opt->{columns}, $col0);
 }
 
 sub GrepArray {
+	my $grep_compare = shift;
 	my $ref = shift;
 	my $opt = shift;
 	my $col0 = shift;
@@ -51,21 +54,20 @@ sub GrepArray {
 	for(@$col0) {
 		my $x=$_;
 		if ($opt->{$x}) {
-			if ($is_num->{$x}) {@$ref = grep {$_->{$x} == $opt->{$x}} @$ref}
-			else {@$ref = grep {$_->{$x} eq $opt->{$x}} @$ref}
+			@$ref = grep {$grep_compare->($_, $x)} @$ref
 		}
 	}
 }
  
 sub SortArray {
+	my $sort_compare = shift;
 	my $ref = shift;
 	my $sort = shift;
 	my $col0 = shift;
 	my $is_num = shift;
 
 	if (List::MoreUtils::any {$_ eq $sort} @$col0) {
-		if ($is_num->{$sort}) {@$ref = sort {$a->{$sort} <=> $b->{$sort}} @$ref}
-		else {@$ref = sort {$a->{$sort} cmp $b->{$sort}} @$ref}
+		@$ref = sort {$sort_compare->($a, $b, $sort)} @$ref
 	}
 	elsif (!$sort) {}
 	else {die "Bad sorting"}
