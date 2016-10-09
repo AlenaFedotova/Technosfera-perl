@@ -20,7 +20,7 @@ while (<>) {
 	Local::MusicLibrary::Processing::TakeArray $_, \%h, \@col0, \@sep;
 	push @data, {%h};
 }
-Local::MusicLibrary::Processing::Process \@data, \%opt, \@col0, \@col, \%is_num;
+Local::MusicLibrary::Processing::Process \&sort_compare, \&grep_compare, \@data, \%opt, \@col0, \@col, \%is_num;
 Local::MusicLibrary::Printing::Print \@data, \@col;
 
 sub TakeOptions {
@@ -29,4 +29,19 @@ sub TakeOptions {
 	$opt{columns} = -1;
 
 	Getopt::Long::GetOptions (\%opt, "$col0[0]=s", "$col0[1]=s", "$col0[2]=s", "$col0[3]=s", "$col0[4]=s", "sort=s", "columns:s");
+}
+
+sub sort_compare {
+	my $a = shift;
+	my $b = shift;
+	my $sort = shift;
+	if ($is_num{$sort}) {return $a->{$sort} <=> $b->{$sort}}
+	else {return $a->{$sort} cmp $b->{$sort}}
+}
+
+sub grep_compare {
+	my $x = shift;
+	my $col = shift;
+	if ($is_num{$col}) {return $x->{$col} == $opt{$col}}
+	else {return $x->{$col} eq $opt{$col}}
 }
