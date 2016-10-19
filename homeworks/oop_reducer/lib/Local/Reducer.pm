@@ -31,17 +31,26 @@ sub init {
 
 sub reduce_n {
 	my ($self, $n) = @_;
-	return;
+	while ($n > 0 && defined($self->{now})) {
+		$self->reduce_one();
+		$self->{now} = $self->{source}->next();
+		$n--;
+	}
+	return $self->reduced();
 }
 
 sub reduce_all {
 	my ($self) = @_;
-	return;
+	while (defined($self->{now})) {
+		$self->reduce_one();
+		$self->{now} = $self->{source}->next();
+	}
+	return $self->reduced();
 }
 
 sub reduced {
 	my ($self) = @_;
-	return;
+	return $self->{reduced};
 }
 
 1;
