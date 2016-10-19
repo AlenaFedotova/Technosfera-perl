@@ -31,7 +31,7 @@ sub init {
 sub next {
 	my ($self) = @_;
 	if ($self->{i} <= $#{$self->{array}}) {return $self->{array}->[$self->{i}++]}
-	else {return 'undef'}
+	else {return undef}
 }
 
 1;
