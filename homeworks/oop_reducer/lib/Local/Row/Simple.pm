@@ -23,19 +23,12 @@ our $VERSION = '1.00';
 
 use parent qw(Local::Row);
 
-sub get {
-	my ($self, $name, $default) = @_;
-
-	my $i = index $self->{str}, $name.':';
-	if ($i != -1) {
-		my $str;
-		my $tmp;
-		($tmp, $str) = split $name.':', $self->{str}, 2;
-		($str, $tmp) = split /,/, $str, 2;
-		return $str;
-	}
-	else {
-		return $default;
+sub parse {
+	my ($self) = @_;
+	my @tmp = split /,/, $self->{str};
+	for (@tmp) {
+		my ($name, $data) = split /:/, $_;
+		$self->{source}->{$name} = $data;
 	}
 }
 
