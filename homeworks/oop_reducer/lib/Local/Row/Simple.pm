@@ -26,6 +26,7 @@ use parent qw(Local::Row);
 sub parse {
 	my ($self) = @_;
 	my @tmp = split /,/, $self->{str};
+	$self->{source} = {};
 	for (@tmp) {
 		my ($name, $data) = split /:/, $_;
 		$self->{source}->{$name} = $data;
