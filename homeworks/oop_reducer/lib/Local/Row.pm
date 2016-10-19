@@ -23,9 +23,15 @@ our $VERSION = '1.00';
 
 use parent qw(Local::Object);
 
+sub init {
+	my ($self) = @_;
+	$self->parse();
+}
+
 sub get {
 	my ($self, $name, $default) = @_;
-	return;
+	if (defined($self->{source}->{$name})) {return $self->{source}->{$name}} 
+	else {return $default}
 }
 
 1;
