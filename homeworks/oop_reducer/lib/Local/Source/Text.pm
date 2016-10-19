@@ -36,7 +36,7 @@ sub next {
 		($tmp, $self->{mod}) = split $self->{delimiter}, $self->{mod}, 2;
 		return $tmp;
 	}
-	else {return 'undef'}
+	else {return undef}
 }
 
 1;
