@@ -23,13 +23,4 @@ our $VERSION = '1.00';
 
 use parent qw(Local::Object);
 
-sub init {
-	my ($self) = @_;
-}
-
-sub next {
-	my ($self) = @_;
-	return;
-}
-
 1;
