@@ -23,28 +23,9 @@ our $VERSION = '1.00';
 
 use parent qw(Local::Reducer);
 
-sub reduce_n {
-	my ($self, $n) = @_;
-	while ($n > 0 && $self->{now} ne 'undef') {
-		$self->{reduced} += $self->{row_class}->new(str => $self->{now})->get($self->{field}, 0);
-		$self->{now} = $self->{source}->next();
-		$n--;
-	}
-	return $self->{reduced};
-}
-
-sub reduce_all {
+sub reduce_one {
 	my ($self) = @_;
-	while ($self->{now} ne 'undef') {
-		$self->{reduced} += $self->{row_class}->new(str => $self->{now})->get($self->{field}, 0);
-		$self->{now} = $self->{source}->next();
-	}
-	return $self->{reduced};
-}
-
-sub reduced {
-	my ($self) = @_;
-	return $self->{reduced};
+	$self->{reduced} += $self->{row_class}->new(str => $self->{now})->get($self->{field}, 0);
 }
 
 1;
