@@ -37,7 +37,8 @@ sub reduce_one {
 	my $tmp = $self->{row_class}->new(str => $self->{now})->get($self->{field}, 0)+0;
 	$self->{sum} += $tmp;
 	if (!defined($self->{min}) || $self->{min} > $tmp) {$self->{min} = $tmp} 
-	if (!defined($self->{max}) || $self->{max} < $tmp) {$self->{max} = $tmp} 
+	if (!defined($self->{max}) || $self->{max} < $tmp) {$self->{max} = $tmp}
+	$self->{now} = $self->{source}->next(); 
 }
 
 sub reduced {
