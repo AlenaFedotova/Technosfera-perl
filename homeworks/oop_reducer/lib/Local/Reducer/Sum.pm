@@ -26,6 +26,7 @@ use parent qw(Local::Reducer);
 sub reduce_one {
 	my ($self) = @_;
 	$self->{reduced} += $self->{row_class}->new(str => $self->{now})->get($self->{field}, 0);
+	$self->{now} = $self->{source}->next();
 }
 
 1;
