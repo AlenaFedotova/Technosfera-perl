@@ -33,7 +33,6 @@ sub reduce_n {
 	my ($self, $n) = @_;
 	while ($n > 0 && defined($self->{now})) {
 		$self->reduce_one();
-		$self->{now} = $self->{source}->next();
 		$n--;
 	}
 	return $self->reduced();
@@ -43,7 +42,6 @@ sub reduce_all {
 	my ($self) = @_;
 	while (defined($self->{now})) {
 		$self->reduce_one();
-		$self->{now} = $self->{source}->next();
 	}
 	return $self->reduced();
 }
