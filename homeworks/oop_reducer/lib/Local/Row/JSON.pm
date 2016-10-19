@@ -2,6 +2,7 @@ package Local::Row::JSON;
 
 use strict;
 use warnings;
+use JSON::XS;
 
 =encoding utf8
 
@@ -23,20 +24,9 @@ our $VERSION = '1.00';
 
 use parent qw(Local::Row);
 
-sub get {
-	my ($self, $name, $default) = @_;
-	my $i = index $self->{str}, '"'.$name.'"';
-	if ($i != -1) {
-		my $str;
-		my $tmp;
-		($tmp, $str) = split '"'.$name.'"', $self->{str}, 2;
-		$str =~ s/\}\s*$//;
-		$str =~ s/^\s*:([^,]*).*$/$1/s;
-		return $str;
-	}
-	else {
-		return $default;
-	}
+sub parse {
+	my ($self) = @_;
+	$self->{source} = JSON::XS->new->utf8->decode($self->{str})
 }
 
 1;
