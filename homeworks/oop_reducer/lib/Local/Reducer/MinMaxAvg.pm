@@ -39,6 +39,7 @@ sub reduce_one {
 	if (!defined($self->{min}) || $self->{min} > $tmp) {$self->{min} = $tmp} 
 	if (!defined($self->{max}) || $self->{max} < $tmp) {$self->{max} = $tmp}
 	$self->{now} = $self->{source}->next(); 
+	return $self->reduced();
 }
 
 sub reduced {
