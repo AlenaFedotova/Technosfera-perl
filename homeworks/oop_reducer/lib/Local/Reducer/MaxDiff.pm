@@ -29,6 +29,7 @@ sub reduce_one {
 	my $mbmax = $tmpobj->get($self->{top}, 0) - $tmpobj->get($self->{bottom}, 0);
 	if ($mbmax > $self->{reduced}) {$self->{reduced} = $mbmax}
 	$self->{now} = $self->{source}->next();
+	return $self->reduced();
 }
 
 1;
