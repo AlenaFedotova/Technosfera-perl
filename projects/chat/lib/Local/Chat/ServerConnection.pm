@@ -46,7 +46,9 @@ has 'nick',       is => 'rw', trigger => sub {
 has 'password',   is => 'rw', trigger => sub {
     my $self = shift;
     if ($self->connected) {
-        $self->command( 'password', { 
+        $self->command( 'password', { password => $self->password } );
+    }
+};  
 
 sub ident {
 	my $self = shift;
