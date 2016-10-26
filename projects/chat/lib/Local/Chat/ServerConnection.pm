@@ -19,36 +19,36 @@ extends 'Local::Chat::Connection';
 
 has 'version', is => 'rw', default => 1;
 has 'host', is => 'rw', required => 1;
-has 'port', is => 'rw', required => 1, default => 3456;
+has 'port', is => 'rw', required => 1;
 has 'sel', is => 'rw', default => sub { IO::Select->new() };
 
 has 'connected',  is => 'rw';
 
 has 'on_disconnect', is => 'rw';
-has 'on_fd',      is => 'rw';
+has 'on_fd',	  is => 'rw';
 has 'on_hello',   is => 'rw';
-has 'on_idle',    is => 'rw';
+has 'on_idle',	  is => 'rw';
 has 'on_message', is => 'rw';
-has 'on_msg',     is => 'rw';
+has 'on_msg',	  is => 'rw';
 has 'on_error',   is => 'rw';
 has 'on_names',   is => 'rw';
-has 'on_join',    is => 'rw';
-has 'on_part',    is => 'rw';
+has 'on_join',	  is => 'rw';
+has 'on_part',	  is => 'rw';
 has 'on_rename',  is => 'rw';
 
-has 'nick',       is => 'rw', trigger => sub {
+#has 'nick',		  is => 'rw', trigger => sub {
+#	my $self = shift;
+#	if ($self->connected) {
+#		$self->command( 'nick', { nick => $self->nick } );
+#	}
+#};
+has 'nick', is => 'rw', 
+has 'password', is => 'rw', trigger => sub {
 	my $self = shift;
 	if ($self->connected) {
-		$self->command( 'nick', { nick => $self->nick } );
+		$self->command( 'nick', { nick => $self->nick, password => $self->password } );
 	}
-};
-
-has 'password',   is => 'rw', trigger => sub {
-    my $self = shift;
-    if ($self->connected) {
-        $self->command( 'password', { password => $self->password } );
-    }
-};  
+};	
 
 sub ident {
 	my $self = shift;
@@ -61,7 +61,7 @@ sub connect {
 	my $fh = IO::Socket::INET->new(
 		PeerAddr => $self->host,
 		PeerPort => $self->port,
-		Proto    => 'tcp',
+		Proto	 => 'tcp',
 	) or die "Failed to connect to @{[ $self->host ]}:@{[ $self->port ]} $!\n";
 	$self->connected(1);
 	$self->fh( $fh );
@@ -146,8 +146,8 @@ sub packet {
 	elsif ( $pkt->{event} and not ref $pkt->{event} ) {
 		given ($pkt->{event}) {
 			when ("hello") {
-				if (length $self->nick) {
-					$self->command( 'nick', { nick => $self->nick } );
+				if (length $self->nick && length $self->password) {
+					$self->command( 'nick', { nick => $self->nick, password => $self->password } );
 				}
 			}
 			when ("nick") {
@@ -157,9 +157,6 @@ sub packet {
 					$self->{nick} = $pkt->{data}{nick};
 				}
 			}
-            when ("password") {
-                ...
-            }
 			when( [qw(error names join part rename)]) {
 				my $callback = 'on_'.$pkt->{event};
 				if ($self->can($callback)) {

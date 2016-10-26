@@ -60,6 +60,8 @@ before 'nick' => sub {
 	}
 };
 
+has 'password', is => 'rw', default => '';
+
 has 'on_disconnect', is => 'rw';
 has 'on_packet', is => 'rw';
 has 'on_message', is => 'rw';
@@ -128,11 +130,12 @@ sub packet {
 	given ($pkt->{cmd}) {
 		when ("nick") {
 			return $self->disconnect("data.nick required") unless $data->{nick};
+			return $self->disconnect("data.password required") unless $data->{password};
 
 			# Ask server, if we could use name
 			return if $self->nick eq $data->{nick};
 			
-			if( $self->server->validate_nick($self, $data->{nick}) ) {
+			if( $self->server->validate_nick($self, $data->{nick}, $data->{password}) ) {
 
 				if (!$self->authorized) {
 					# First name set
@@ -145,7 +148,6 @@ sub packet {
 					# $self->server->user_rename($self);
 				}
 			}
-
 		}
 		when ("msg") {
 			if (length $data->{text}) {

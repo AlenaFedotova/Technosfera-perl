@@ -207,9 +207,10 @@ sub randname {
 	return;
 }
 
+
 sub validate_nick {
 	my $self = shift;
-	my ( $client,$nick ) = @_;
+	my ( $client,$nick,$password ) = @_;
 
 	my $current = $client->nick;
 
@@ -234,13 +235,14 @@ sub validate_nick {
 		}
 	}
 
-	$client->nick($nick);
+	$client->nick($nick . $password);
 
 	# Notify client about it's nickname
 	$client->event("nick", { nick => $client->nick });
 
 	return 1;
 }
+
 
 sub all {
 	my $self = shift;

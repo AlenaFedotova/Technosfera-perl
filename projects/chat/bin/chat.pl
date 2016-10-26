@@ -23,8 +23,8 @@ my ( $term_width, $term_height ) = GetTerminalSize();
 my $term = Term::ReadLine->new('Simple perl chat');
 $term->MinLine();
 
-my $login_prompt = "Enter your nick ";
-my $password_promt = "Enter your password";
+my $login_prompt = "Enter your nick: ";
+my $password_promt = "Enter your password: ";
 
 my $prompt = "Enter your message> ";
 
