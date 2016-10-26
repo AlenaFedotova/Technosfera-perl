@@ -43,6 +43,11 @@ has 'nick',       is => 'rw', trigger => sub {
 	}
 };
 
+has 'password',   is => 'rw', trigger => sub {
+    my $self = shift;
+    if ($self->connected) {
+        $self->command( 'password', { 
+
 sub ident {
 	my $self = shift;
 	return $self->nick.'@'.$self->remote;
@@ -150,6 +155,9 @@ sub packet {
 					$self->{nick} = $pkt->{data}{nick};
 				}
 			}
+            when ("password") {
+                ...
+            }
 			when( [qw(error names join part rename)]) {
 				my $callback = 'on_'.$pkt->{event};
 				if ($self->can($callback)) {

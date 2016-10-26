@@ -24,6 +24,8 @@ my $term = Term::ReadLine->new('Simple perl chat');
 $term->MinLine();
 
 my $login_prompt = "Enter your nick ";
+my $password_promt = "Enter your password";
+
 my $prompt = "Enter your message> ";
 
 local $SIG{WINCH} = sub {
@@ -55,12 +57,15 @@ sub add_message {
 }
 
 my $nick = $term->readline($login_prompt);
+my $password = $term->readline($password_promt);
 chomp($nick);
+chomp($password);
+
 $term->MinLine(1);
 
 init();
 
-my $server = Local::Chat::ServerConnection->new(nick => $nick, host => $ARGV[0] || 'localhost', 
+my $server = Local::Chat::ServerConnection->new(nick => $nick, password => $password, host => $ARGV[0] || 'localhost', 
 	on_fd => sub {
 		my ($srv, $fd) = @_;
 		if ($fd == $term->IN) {
