@@ -58,6 +58,8 @@ sub add_message {
 
 my $nick = $term->readline($login_prompt);
 my $password = $term->readline($password_promt);
+my $port = 3456;
+
 chomp($nick);
 chomp($password);
 
@@ -65,7 +67,7 @@ $term->MinLine(1);
 
 init();
 
-my $server = Local::Chat::ServerConnection->new(nick => $nick, password => $password, host => $ARGV[0] || 'localhost', 
+my $server = Local::Chat::ServerConnection->new(nick => $nick, password => $password || '', host => $ARGV[0] || 'localhost', port => $port || 3456,
 	on_fd => sub {
 		my ($srv, $fd) = @_;
 		if ($fd == $term->IN) {
