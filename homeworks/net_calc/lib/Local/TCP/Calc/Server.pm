@@ -37,7 +37,7 @@ sub REAPER {
 }
 
 
-$SIG{INT} = sub {
+sub int_signal {
 	kill('INT', $pid_worker);
 	
 	for (%$pids_master) {
@@ -47,26 +47,44 @@ $SIG{INT} = sub {
 	exit(0);
 };
 
+sub take_message {
+	my $client = shift;
+	my $header;
+	sysread $client, $header, 8;
+	my $message;
+
+	my $ref = Local::TCP::Calc->unpack_header($header);
+p $ref;
+	my $size = $ref->{size};
+	my $type = $ref->{type};
+	sysread $client, $message, $size;
+	my $res = Local::TCP::Calc->unpack_message($message);
+p $res;
+	return {res_type => $type, result => [@$res]};
+}
+
 sub send_message_arr {
+
 	my $client = shift;
 	my $type = shift;
 	my $message = shift;
-p $message;
 	my $new_message = Local::TCP::Calc->pack_message([@$message]);
 	my $new_header = Local::TCP::Calc->pack_header($type, length($new_message));
-	print $client $new_header."\n";
-	print $client $new_message."\n";
+
+	syswrite $client, $new_header;
+	syswrite $client, $new_message;
 }
 
 sub send_message {
 	my $client = shift;
 	my $type = shift;
 	my $message = shift;
-	
+
 	my $new_message = Local::TCP::Calc->pack_message([$message]);
 	my $new_header = Local::TCP::Calc->pack_header($type, length($new_message));
-	print $client $new_header."\n";
-	print $client $new_message."\n";
+
+	syswrite $client, $new_header;
+	syswrite $client, $new_message;
 }
 
 sub start_server {
@@ -77,20 +95,25 @@ sub start_server {
 	my $max_receiver    = $opts{max_receiver} // die "max_receiver required"; 
 	my $server = IO::Socket::INET->new(LocalPort => $port, Proto => 'tcp', Type => SOCK_STREAM, Listen => $max_receiver) or die "$!";
 
-	$q = Local::TCP::Calc::Server::Queue->new(max_task => $max_queue_task);
+	$q = Local::TCP::Calc::Server::Queue->new(max_task => $max_queue_task, queue_filename => '/tmp/local_queue.'.$port.'.log');
+	$q->init();
+	my $qref = \$q;
 
   	$pid_worker = fork();
-	if ($pid_worker == 0) {
-		Local::TCP::Calc::Server::WorkerManager->check_queue_workers($q, $max_worker, $max_forks_per_task);
-	}
+	$SIG{INT} = \&int_signal;
 	if (!defined($pid_worker)) {die "Can't fork: $!"}
-	$q->init();
+	if (!$pid_worker) {
+		Local::TCP::Calc::Server::WorkerManager->check_queue_workers($qref, $max_worker, $max_forks_per_task);
+	}
 
 	while (1) {
 		my $client = $server->accept();
+
 		if ($client == 0) {
 			next;
 		}
+
+
 		if ($receiver_count < $max_receiver) {
 			send_message($client, Local::TCP::Calc::TYPE_CONN_OK(), '');
 
@@ -104,26 +127,14 @@ sub start_server {
 				next;
 			}
 			if (defined $child) {
-				my $header = <$client>; 
-				chomp $header;
 
-				$header = Local::TCP::Calc->unpack_header($header);
-				my $size = $header->{size};
-				my $type = $header->{type};
+				my $ref = take_message($client);
+				my $type = $ref->{res_type};
+				my $taskref = $ref->{result};
 
 				if ($type eq Local::TCP::Calc::TYPE_START_WORK()) {
-					my $message = <$client>;
-					chomp $message;
-
-					if (length($message) != $size) {
-						send_message($client, Local::TCP::Calc::TYPE_NEW_WORK_ERR(), '');
-						close($client);
-						exit(0);
-					}
-					my $taskref = Local::TCP::Calc->unpack_message($message);
 
 					my $id = $q->add($taskref);
-						
 					if ($id) {
 						kill('ALRM', $pid_worker);
 						send_message($client, Local::TCP::Calc::TYPE_NEW_WORK_OK(), $id);
@@ -133,15 +144,8 @@ sub start_server {
 					}
 				}
 				elsif ($type eq Local::TCP::Calc::TYPE_CHECK_WORK()) {
-					my $message = <$client>;
-					chomp $message;
-					if (length($message) != $size) {
-						send_message($client, Local::TCP::Calc::TYPE_CHECK_WORK_ERR(), '');
-						close($client);
-						exit(0);
-					}
-					my $ref = Local::TCP::Calc->unpack_message($message);
-					my $id = $ref->[0];
+
+					my $id = $taskref->[0];
 
 					my $status = $q->get_status($id);
 					if ($status eq 'done') {
@@ -183,15 +187,6 @@ sub start_server {
 	}
 	$server->close();
 	kill('TERM', $pid_worker);
-	# Начинаем accept-тить подключения
-	# Проверяем, что количество принимающих форков не вышло за пределы допустимого ($max_receiver)
-	# Если все нормально отвечаем клиенту TYPE_CONN_OK() в противном случае TYPE_CONN_ERR()
-	# В каждом форке читаем сообщение от клиента, анализируем его тип (TYPE_START_WORK(), TYPE_CHECK_WORK()) 
-	# Не забываем проверять количество прочитанных/записанных байт из/в сеть
-	# Если необходимо добавляем задание в очередь (проверяем получилось или нет) 
-	# Если пришли с проверкой статуса, получаем статус из очереди и отдаём клиенту
-	# В случае если статус DONE или ERROR возвращаем на клиент содержимое файла с результатом выполнения
-	# После того, как результат передан на клиент зачищаем файл с результатом
 }
 
 1;
