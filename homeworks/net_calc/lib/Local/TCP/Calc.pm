@@ -4,20 +4,22 @@ use strict;
 use feature 'say';
 use DDP;
 
+our $VERSION = '1.00';
+
 sub TYPE_START_WORK {1}
 sub TYPE_CHECK_WORK {2}
 sub TYPE_CONN_ERR   {3}
 sub TYPE_CONN_OK    {4}
 sub TYPE_NEW_WORK_OK {5}
-sub TYPE_NEW_WORK_ERR {6}
-sub TYPE_CHECK_WORK_ERR {7}
+sub TYPE_NEW_WORK_ERR {0}
+sub TYPE_CHECK_WORK_ERR {0}
 sub TYPE_ASK_ERR {8}
-sub TYPE_CHECK_WORK_ERR_ID {9}
+sub TYPE_CHECK_WORK_ERR_ID {0}
 
-sub STATUS_NEW   {1}
-sub STATUS_WORK  {2}
-sub STATUS_DONE  {3}
-sub STATUS_ERROR {4}
+sub STATUS_NEW   {10}
+sub STATUS_WORK  {20}
+sub STATUS_DONE  {30}
+sub STATUS_ERROR {40}
 
 sub pack_header {
 	my $pkg = shift;
