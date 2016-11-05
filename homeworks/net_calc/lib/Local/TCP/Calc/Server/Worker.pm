@@ -75,6 +75,11 @@ sub write_res {
 sub start {
 	my $self = shift;
 
+	my $fhres;
+	open($fhres, '>', Local::TCP::Calc::Server::FileName::res($self->{cur_task_id}))
+		or die "Can't open ".Local::TCP::Calc::Server::FileName::task($self->{cur_task_id})."\n";
+	close($fhres);
+
 	$SIG{INT} = \&int_signal;
 	my $fhtask;
 	open($fhtask, '<', Local::TCP::Calc::Server::FileName::task($self->{cur_task_id}))
