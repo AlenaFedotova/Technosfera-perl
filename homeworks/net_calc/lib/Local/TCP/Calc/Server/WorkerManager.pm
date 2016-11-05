@@ -1,120 +1,96 @@
-package Local::TCP::Calc::Server::Worker;
+package Local::TCP::Calc::Server::WorkerManager;
 
 use strict;
-use warnings;
-use Mouse;
+use Local::TCP::Calc;
+use Local::TCP::Calc::Server::Queue;
+use Local::TCP::Calc::Server;
+use Local::TCP::Calc::Server::Worker;
+use IO::Socket::INET;
 use feature 'say';
-use Local::TCP::Calc::Server::FileName;
-use Fcntl qw(:flock);
+use Math::Expression::Evaluator;
+use Math::Expression;
 use POSIX;
 
-has cur_task_id => (is => 'ro', isa => 'Int', required => 1);
-has forks       => (is => 'rw', isa => 'HashRef', default => sub {return {}});
-has calc_ref    => (is => 'ro', isa => 'CodeRef', required => 1);
-has max_forks   => (is => 'ro', isa => 'Int', required => 1);
 
-my $err = 0;
-my $num_forks = 0;
-
-sub write_err {
-	my $self = shift;
-	my $error = shift;
-
-	my $fh;
-	open($fh, '>', Local::TCP::Calc::Server::FileName::res($self->{cur_task_id}))
-		or die "Can't open ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
-	until (flock($fh, 2)) {sleep 0.01}
-
-	say $fh $error;
-	flock($fh, 8)
-		or die "Can't unlock ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
-	close($fh);
-}
-
-sub write_res {
-	my $self = shift;
-	my $task = shift;
-	my $res = shift;
-	my $fh;
-
-	open($fh, '>>', Local::TCP::Calc::Server::FileName::res($self->{cur_task_id}))
-		or die "Can't open ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
-	until (flock($fh, 2)) {sleep 0.01}
-
-	say $fh $task.' == '.$res;
-	flock($fh, 8)
-		or die "Can't unlock ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
-	close($fh);
-}
-
-sub start {
-	my $self = shift;
+my $in_process = 0;
+my $pids_master = {};
 
 
+sub REAPER {
+	while (my $pid = waitpid(-1, WNOHANG)) {
+		last if $pid == -1;
 
-	sub REAPER {
-		while (my $pid = waitpid(-1, WNOHANG)) {
-
-			last if $pid == -1;
-
-			my $status = $?;
-			if ($status != 0) {
-				$err++;
-			}
-
-			delete $self->forks->{$pid};
-			$num_forks--;
-
+		my $status = $?;
+		if (exists($pids_master->{$pid})) {
+			delete $pids_master->{$pid};
+			$in_process--;
 		}
-		$SIG{CHLD} = \&REAPER;
 	}
-	
+	$SIG{CHLD} = \&REAPER;
+}
 
-	$SIG{INT} = sub {
-		for (%{$self->forks}) {
-			kill('TERM', $_);
-		}
-		exit(0);
-	};
 
-	my $fhtask;
-	open($fhtask, '<', Local::TCP::Calc::Server::FileName::task($self->{cur_task_id}))
-		or die "Can't open ".Local::TCP::Calc::Server::FileName::task($self->{cur_task_id})."\n";
+sub int_signal {
+	for (%$pids_master) {
+		kill('INT', $_);
+	}
+	exit(0);
+};
+
+my $check_queue_workers_active = 0;
+$SIG{ALRM} = \&alrm;
+sub alrm {
+	$check_queue_workers_active++;
+	$SIG{ALRM} = \&alrm;
+};
+
+sub check_queue_workers {
+	my $pkg = shift;
+	my $qref = shift;
+	my $q = $$qref;
+	$SIG{INT} = \&int_signal;
+	my $max_worker = shift;
+	my $max_forks_per_task = shift;
 	
-	while (<$fhtask>) {
-		chomp $_;
-		if ($err) {
-			for (%{$self->forks}) {
-				kill('TERM', $_);
+	while (1) {
+		if ($check_queue_workers_active && $in_process < $max_worker) {
+			my $child = fork();
+			if ($child) {
+				$in_process++;
+				$check_queue_workers_active--;
+				$pids_master->{$child} = $child;
+				$SIG{CHLD} = \&REAPER;
+				next;
 			}
-			last
-		}
 
-		while ($num_forks >= $self->{max_forks}) {
-			sleep 0.1;
-		}
-		my $child = fork();
-		if ($child) {
-			$num_forks++;
-			$self->forks->{$child} = $child;
-			$SIG{CHLD} = \&REAPER;
-			next;
-		}
-		if (defined $child) {
-			my $res = $self->calc_ref->($_);
+			if(!defined($child)) {die "Can't fork: $!"}
 
-			$self->write_res($_, $res);
+			my $id = $q->get();
+
+			my $worker = Local::TCP::Calc::Server::Worker->new(cur_task_id => $id, calc_ref => \&func, max_forks => $max_forks_per_task);
+			my $err = $worker->start();
+			if ($err) {
+				$q->to_done($id, 'error');
+			}
+			else {
+				$q->to_done($id, 'done');
+			}
 			exit(0);
 		}
-		else {die "Can't fork: $!"}
+		sleep 0.1;
 	}
-	while ($num_forks) {sleep 0.1}
-
-	close $fhtask;
-	return $err;
 }
 
-no Mouse;
-__PACKAGE__->meta->make_immutable();
+sub func {
+	open STDERR, ">/dev/null";
+	my $str = shift;
+	my $m = Math::Expression::Evaluator->new;
+	my $p = Math::Expression->new;
+	if ($p->ParseString($str)) {
+		return $m->parse($str)->val();
+	}
+	else {return 'NaN'}
+	
+}
 
 1;
