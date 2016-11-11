@@ -48,7 +48,8 @@ sub write_err {
 	my $fh;
 	open($fh, '>', Local::TCP::Calc::Server::FileName::res($self->{cur_task_id}))
 		or die "Can't open ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
-	until (flock($fh, LOCK_EX)) {sleep 0.01}
+	flock($fh, LOCK_EX)
+		or die "Can't lock ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
 
 	say $fh $error;
 	flock($fh, LOCK_UN)
@@ -64,7 +65,8 @@ sub write_res {
 
 	open($fh, '>>', Local::TCP::Calc::Server::FileName::res($self->{cur_task_id}))
 		or die "Can't open ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
-	until (flock($fh, LOCK_EX)) {sleep 0.01}
+	flock($fh, LOCK_EX)
+		or die "Can't lock ".Local::TCP::Calc::Server::FileName::res($self->{cur_task_id})."\n";
 
 	say $fh $task.' == '.$res;
 	flock($fh, LOCK_UN)
