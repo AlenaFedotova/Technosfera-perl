@@ -11,44 +11,54 @@ sub set_connect {
 	my $ip = shift;
 	my $port = shift;
 
-	my $sock = IO::Socket::INET->new(PeerPort => $port, Proto => 'tcp', Type => SOCK_STREAM, PeerAddr => $ip) or die "$!";;
+say "connecting $port";
+	my $sock = IO::Socket::INET->new(PeerPort => $port, Proto => 'tcp', Type => SOCK_STREAM, PeerAddr => $ip) or die "$!";
+
+	say "in set_connect";
+	say $sock;
 
 	my $res = take_message($sock);
 
+	say "in set_connect connect";
 	my $type = $res->{res_type};
 	p $res;
-	if ($type eq Local::TCP::Calc::TYPE_CONN_ERR()) {return 0}
-	return $sock;
+	if ($type ne Local::TCP::Calc::TYPE_CONN_ERR()) {return $sock}
 }
 
 sub send_message {
 	my $server = shift;
 	my $type = shift;
 	my $message = shift;
-
+say "Sending";
 	my $new_message = Local::TCP::Calc->pack_message($message);
 	my $new_header = Local::TCP::Calc->pack_header($type, length($new_message));
-
+say $new_header;
 	syswrite $server, $new_header;
 	my @arr = split //, $new_message;
 
 	syswrite $server, $new_message;
+	say "Sended";
 }
 
 sub take_message {
 	my $server = shift;
+	say $server;
 	my $header;
-
+say "in client before take_message";
 	sysread $server, $header, 8;
-
+say "in client after take_message";
+	say "got header";
 	my $message;
+	say "in take_message";
 
 	my $ref = Local::TCP::Calc->unpack_header($header);
+p $ref;
 	my $size = $ref->{size};
 	my $type = $ref->{type};
 	sysread $server, $message, $size;
 
 	my $res = Local::TCP::Calc->unpack_message($message);
+#p $res;
 	return {res_type => $type, result => [@$res]};
 }
 
@@ -58,11 +68,13 @@ sub do_request {
 	my $type = shift;
 	my $message = shift;
 	my $struct;
-
+	say "Here $type $message";
+	# Проверить, что записанное/прочитанное количество байт равно длинне сообщения/заголовка
+	# Принимаем и возвращаем перловые структуры
 	send_message($server, $type, $message);
 	$struct = take_message($server);
-	if ($struct->{res_type} eq Local::TCP::Calc::TYPE_NEW_WORK_OK()) {return $struct->{result}->[0]}
-	if ($struct->{res_type} eq Local::TCP::Calc::TYPE_NEW_WORK_ERR()) {return 0}
+	#if ($struct->{res_type} eq Local::TCP::Calc::TYPE_NEW_WORK_OK()) {return $struct->{result}->[0]}
+	#if ($struct->{res_type} eq Local::TCP::Calc::TYPE_NEW_WORK_ERR()) {return 0}
 
 	return ($struct->{res_type}, @{$struct->{result}});
 }
