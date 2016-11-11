@@ -31,7 +31,8 @@ sub open {
 
 	open($self->{f_handle}, $open_type, $self->{queue_filename})
 		or die "Can't open ".$self->{queue_filename}."\n";
-	until (flock($self->{f_handle}, LOCK_EX)) {sleep 0.01}
+	flock($self->{f_handle}, LOCK_EX)
+		or die "Can't lock ".$self->{queue_filename}."\n";
 	my $fh = $self->{f_handle};
 	my $first_line = <$fh>;
 	chomp $first_line;
