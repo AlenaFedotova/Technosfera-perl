@@ -36,7 +36,7 @@ has schema   => (is => 'rw', isa => 'Local::Schema');
 sub init {
 	my $self = shift;
 
-	$self->{schema} = Local::Schema->connect("DBI:mysql:database=".$self->{database}, $self->{name}, $self->{password});
+	$self->{schema} = Local::Schema->connect("DBI:mysql:database=".$self->{database}, $self->{name}, $self->{password}, {mysql_enable_utf8 => 1, mysql_init_command => 'SET NAMES utf8'});
 }
 
 sub _user_information {
