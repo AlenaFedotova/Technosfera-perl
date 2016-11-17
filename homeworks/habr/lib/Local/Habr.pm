@@ -6,6 +6,7 @@ use Local::Habr::Base;
 use Local::Habr::Cache;
 use Local::Habr::Site;
 use feature 'say';
+use open ":utf8",":std";
 
 =encoding utf8
 
@@ -87,7 +88,6 @@ sub ask_by_post {
 		return undef;
 	}
 	$base->add_post($res, $author, $commenters);
-
 	return ($res, $author, $commenters);
 }
 
