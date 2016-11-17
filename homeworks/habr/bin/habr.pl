@@ -8,6 +8,7 @@ use DDP;
 use Local::Habr;
 use JSON::XS;
 require 'habr.conf';
+use open ":utf8",":std";
 
 Local::Habr->init(conf());
 
@@ -37,8 +38,8 @@ if (defined $opt{format} && $opt{format} eq 'ddp') {
 	for (@res) {p $_}
 }
 elsif (defined $opt{format} && $opt{format} eq 'json') {
-	for (@res) {print JSON::XS->new->utf8->encode($_)."\n"}
+	for (@res) {print JSON::XS->new->pretty->encode($_)."\n"}
 }
 else {
-	print Dumper(@res)
+	for (@res) {p $_}
 }
