@@ -46,7 +46,7 @@ sub add_user {
 	my $self = shift;
 	my $user = shift;
 
-	if (!$self->{memd}->set($user->{username}, $user)) {say ':-('}
+	$self->{memd}->set($user->{username}, $user)
 }
 
 1;
