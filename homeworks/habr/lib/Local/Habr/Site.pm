@@ -121,11 +121,6 @@ sub take_post {
 	}
 	else {$rating = 0}
 
-	my $tr = new Lingua::Translit("GOST 7.79 RUS");
-	if ($tr->can_reverse()) {
-		$topic = $tr->translit($topic)
-	}
-
 	return ({id => $post_id, author => $author->{username}, topic => $topic, rating => $rating+0, views => $views, stars => $stars}, $author, \@commenters)
 }
 
