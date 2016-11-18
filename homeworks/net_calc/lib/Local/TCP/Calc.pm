@@ -25,13 +25,13 @@ sub pack_header {
 	my $pkg = shift;
 	my $type = shift;
 	my $size = shift;
-	return pack "ii", $type, $size;
+	return pack "CC", $type, $size;
 }
 
 sub unpack_header {
 	my $pkg = shift;
 	my $header = shift;
-	my ($type, $size) = unpack "ii", $header;
+	my ($type, $size) = unpack "CC", $header;
 	return {type => $type, size => $size};
 }
 
