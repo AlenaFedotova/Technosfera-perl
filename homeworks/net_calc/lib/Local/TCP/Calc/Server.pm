@@ -52,14 +52,16 @@ sub int_signal {
 sub take_message {
 	my $client = shift;
 	my $header;
-	sysread $client, $header, 8;
+	my $len = sysread $client, $header, 2;
+	if ($len != 2) {say STDERR "Wrong size of header"; close($client); exit(1)}
 	my $message;
 
 	my $ref = Local::TCP::Calc->unpack_header($header);
 
 	my $size = $ref->{size};
 	my $type = $ref->{type};
-	sysread $client, $message, $size;
+	$len = sysread $client, $message, $size;
+	if ($len != $size) {say STDERR "Wrong size of message"; close($client); exit(1)}
 	my $res = Local::TCP::Calc->unpack_message($message);
 
 	return {res_type => $type, result => [@$res]};
@@ -74,8 +76,10 @@ sub send_message_arr {
 	my $new_message = Local::TCP::Calc->pack_message([@$message]);
 	my $new_header = Local::TCP::Calc->pack_header($type, length($new_message));
 
-	syswrite $client, $new_header;
-	syswrite $client, $new_message;
+	my $len = syswrite $client, $new_header;
+	if ($len != 2) {say STDERR "Wrong size of header"; close($client); exit(1)}
+	$len = syswrite $client, $new_message;
+	if ($len != length($new_message)) {say STDERR "Wrong size of message"; close($client); exit(1)}
 }
 
 sub send_message {
@@ -86,8 +90,10 @@ sub send_message {
 	my $new_message = Local::TCP::Calc->pack_message([$message]);
 	my $new_header = Local::TCP::Calc->pack_header($type, length($new_message));
 
-	syswrite $client, $new_header;
-	syswrite $client, $new_message;
+	my $len = syswrite $client, $new_header;
+	if ($len != 2) {say STDERR "Wrong size of header"; close($client); exit(1)}
+	$len = syswrite $client, $new_message;
+	if ($len != length($new_message)) {say STDERR "Wrong size of message"; close($client); exit(1)}
 }
 
 sub start_server {
