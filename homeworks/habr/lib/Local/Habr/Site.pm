@@ -3,7 +3,7 @@ package Local::Habr::Site;
 use strict;
 use warnings;
 use LWP::UserAgent;
-use Mouse;
+use Moose;
 use open ":utf8",":std";
 use Mojo::DOM;
 use feature 'say';
@@ -30,22 +30,22 @@ our $VERSION = '1.00';
 =cut
 
 has address => (is => 'ro', isa => 'Str', default => 'https://habrahabr.ru/');
-has ua => (is => 'rw', isa => 'LWP::UserAgent');
+has ua => (is => 'rw', isa => 'LWP::UserAgent', builder => '_build_ua', lazy => 1);
 
-sub init {
-	my $self = shift;
+sub _build_ua {
+	my ($self) = @_;
 
-	$self->{ua} = LWP::UserAgent->new;
-	$self->{ua}->timeout(10);
-	$self->{ua}->env_proxy;
+	my $ua = LWP::UserAgent->new;
+	$ua->timeout(10);
+	$ua->env_proxy;
+	return $ua;
 }
 
 sub take_user {
-	my $self = shift;
-	my $name = shift;
+	my ($self, $name) = @_;
 
-	my $response = $self->{ua}->get($self->{address}.'users/'.$name.'/');
-	if (!$response->is_success) {return undef}
+	my $response = $self->ua->get($self->{address}.'users/'.$name.'/');
+	if (!$response->is_success) {return}
 	my $str = $response->decoded_content;
 
 	my $dom = Mojo::DOM->new($str);
@@ -70,18 +70,16 @@ sub take_user {
 }
 
 sub take_company {
-	my $self = shift;
-	my $name = shift;
+	my ($self, $name) = @_;
 
 	return {username => $name};
 }
 
 sub take_post {
-	my $self = shift;
-	my $id = shift;
+	my ($self, $id) = @_;
 
-	my $response = $self->{ua}->get($self->{address}.'post/'.$id.'/');
-	if (!$response->is_success) {return undef}
+	my $response = $self->ua->get($self->{address}.'post/'.$id.'/');
+	if (!$response->is_success) {return}
 	my $str = $response->decoded_content;
 
 	my $dom = Mojo::DOM->new($str);
