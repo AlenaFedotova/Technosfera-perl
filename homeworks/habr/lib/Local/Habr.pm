@@ -31,21 +31,15 @@ my $cache;
 my $site;
 
 sub init {
-	my $pkg = shift;
-	my $conf = shift;
+	my ($pkg, $conf) = @_;
 
 	$base = Local::Habr::Base->new(database => $conf->{database}->{database_name}, name => $conf->{database}->{username}, password => $conf->{database}->{password});
 	$cache = Local::Habr::Cache->new(server => $conf->{memcached}->{host}.':'.$conf->{memcached}->{port});
 	$site = Local::Habr::Site->new();
-	$base->init();
-	$cache->init();
-	$site->init();
 }
 
 sub ask_user_by_name {
-	my $pkg = shift;
-	my $name = shift;
-	my $refresh = shift;
+	my ($pkg, $name, $refresh) = @_;
 	my $res;
 
 	if (!$refresh) {
@@ -61,7 +55,7 @@ sub ask_user_by_name {
 	}
 	$res = $site->take_user($name);
 	if (!defined($res)) {
-		return undef;
+		return;
 	}
 	$base->add_user($res);
 	$cache->add_user($res);
@@ -70,9 +64,7 @@ sub ask_user_by_name {
 }
 
 sub ask_by_post {
-	my $pkg = shift;
-	my $post = shift;
-	my $refresh = shift;
+	my ($pkg, $post, $refresh) = @_;
 
 	my $res;
 	my $author;
@@ -85,16 +77,14 @@ sub ask_by_post {
 	}
 	($res, $author, $commenters) = $site->take_post($post);
 	if (!defined($res)) {
-		return undef;
+		return;
 	}
 	$base->add_post($res, $author, $commenters);
 	return ($res, $author, $commenters);
 }
 
 sub ask_user_by_post {
-	my $pkg = shift;
-	my $post = shift;
-	my $refresh = shift;
+	my ($pkg, $post, $refresh) = @_;
 
 	my $res;
 	my $author;
@@ -105,9 +95,7 @@ sub ask_user_by_post {
 }
 
 sub ask_post {
-	my $pkg = shift;
-	my $post = shift;
-	my $refresh = shift;
+	my ($pkg, $post, $refresh) = @_;
 	
 	my $res;
 	my $author;
@@ -117,9 +105,7 @@ sub ask_post {
 }
 
 sub ask_commenters {
-	my $pkg = shift;
-	my $post = shift;
-	my $refresh = shift;
+	my ($pkg, $post, $refresh) = @_;
 
 	my $res;
 	my $author;
@@ -130,13 +116,12 @@ sub ask_commenters {
 }
 
 sub ask_self_commenters {
-	my $pkg = shift;
+	my ($pkg) = @_;
 	return $base->self_commentors();
 }
 
 sub ask_desert_posts {
-	my $pkg = shift;
-	my $n = shift;
+	my ($pkg, $n) = @_;
 	return $base->desert_posts($n);
 }
 
