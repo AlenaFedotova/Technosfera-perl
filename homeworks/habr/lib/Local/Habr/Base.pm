@@ -2,7 +2,7 @@ package Local::Habr::Base;
 
 use strict;
 use warnings;
-use Mouse;
+use Moose;
 use DBI;
 use Local::Schema;
 use List::MoreUtils;
@@ -31,48 +31,43 @@ our $VERSION = '1.00';
 has database => (is => 'ro', isa => 'Str', default => 'habr');
 has name     => (is => 'ro', isa => 'Str', required => 1);
 has password => (is => 'ro', isa => 'Str', required => 1);
-has schema   => (is => 'rw', isa => 'Local::Schema');
+has schema   => (is => 'rw', isa => 'Local::Schema', builder => '_build_schema', lazy => 1);
 
-sub init {
-	my $self = shift;
-
-	$self->{schema} = Local::Schema->connect("DBI:mysql:database=".$self->{database}, $self->{name}, $self->{password}, {mysql_enable_utf8 => 1, mysql_init_command => 'SET NAMES utf8'});
+sub _build_schema {
+	my ($self) = @_;
+	return Local::Schema->connect("DBI:mysql:database=".$self->database, $self->name, $self->password, {mysql_enable_utf8 => 1, mysql_init_command => 'SET NAMES utf8'});
 }
 
 sub _user_information {
-	my $self = shift;
-	my $user = shift;
+	my ($self, $user) = @_;
 	return {username => $user->username, karma => $user->karma, rating => $user->rating}
 }
 
 sub _post_information {
-	my $self = shift;
-	my $post = shift;
+	my ($self, $post) = @_;
 	return {id => $post->id, author => $post->author->username, topic => $post->topic, rating => $post->rating, views => $post->views, stars => $post->stars}
 }
 
 sub take_user {
-	my $self = shift;
-	my $name = shift;
+	my ($self, $name) = @_;
 	my $res;
 
-	my $tmp = $self->{schema}->resultset('User')->find($name);
-	if (!defined($tmp)) {return undef}
+	my $tmp = $self->schema->resultset('User')->find($name);
+	if (!defined($tmp)) {return}
 	$res = $self->_user_information($tmp);
 
 	return $res;
 }
 
 sub take_post {
-	my $self = shift;
-	my $post = shift;
+	my ($self, $post) = @_;
 	my $res;
 	my $author;
 	my @commentors;
 
-	my $tmp = $self->{schema}->resultset('Post')->find($post);
+	my $tmp = $self->schema->resultset('Post')->find($post);
 	
-	if (!defined($tmp)) {return undef}
+	if (!defined($tmp)) {return}
 
 	my @tmp = $tmp->comments;
 	$res = $self->_post_information($tmp);
@@ -87,27 +82,25 @@ sub take_post {
 }
 
 sub self_commentors {
-	my $self = shift;
+	my ($self) = @_;
 	my @self_com;
 
-	my @tmp;
-	my $comments = $self->{schema}->resultset('Comment');
+	my $comments = $self->schema->resultset('Comment');
 	while (my $com = $comments->next) {
 		if ($com->post->author->username eq $com->commentor->username && !List::MoreUtils::any {$_->{username} eq $com->commentor->username} @self_com) {
 			push(@self_com, $self->_user_information($com->commentor))
 		}
 	}
-	
+#select distinct username, karma, user.rating from user join post on post.author = user.username join comment on comment.post_id = post.id where post.author = comment.commentor
 	return @self_com;
 }
 
 sub desert_posts {
-	my $self = shift;
-	my $n = shift;
+	my ($self, $n) = @_;
 	my @des_posts;
 
 	my @commentors;
-	my $posts = $self->{schema}->resultset('Post');
+	my $posts = $self->schema->resultset('Post');
 	while (my $post = $posts->next) {
 		my @coms = $post->comments;
 
@@ -121,19 +114,15 @@ sub desert_posts {
 }
 
 sub add_user {
-	my $self = shift;
-	my $user = shift;
+	my ($self, $user) = @_;
 
-	$self->{schema}->resultset('User')->update_or_create({username => $user->{username}, karma => $user->{karma}, rating => $user->{rating}})
+	$self->schema->resultset('User')->update_or_create({username => $user->{username}, karma => $user->{karma}, rating => $user->{rating}})
 }
 
 sub add_post {
-	my $self = shift;
-	my $post = shift;
-	my $author = shift;
-	my $commentors = shift;
+	my ($self, $post, $author, $commentors) = @_;
 
-	my $tmp = $self->{schema}->resultset('Post')->find($post->{id});
+	my $tmp = $self->schema->resultset('Post')->find($post->{id});
 
 	if (defined $tmp) {
 		my @coms = $tmp->comments;
@@ -142,14 +131,14 @@ sub add_post {
 		$tmp->delete();
 	}
 	$self->add_user($author);
-	my $a = $self->{schema}->resultset('User')->find($author->{username});
-	my $p = $self->{schema}->resultset('Post')->create({id => $post->{id}, author => $post->{author}, topic => $post->{topic}, rating => $post->{rating}, views => $post->{views}, stars => $post->{stars}});
+	my $a = $self->schema->resultset('User')->find($author->{username});
+	my $p = $self->schema->resultset('Post')->create({id => $post->{id}, author => $post->{author}, topic => $post->{topic}, rating => $post->{rating}, views => $post->{views}, stars => $post->{stars}});
 
 	for (@$commentors) {
 
 		$self->add_user($_);
 
-		$self->{schema}->resultset('Comment')->create({post_id => $post->{id}, commentor => $_->{username}});
+		$self->schema->resultset('Comment')->create({post_id => $post->{id}, commentor => $_->{username}});
 	}
 }
 
