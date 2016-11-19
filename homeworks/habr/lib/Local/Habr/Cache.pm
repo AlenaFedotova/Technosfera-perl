@@ -3,7 +3,7 @@ package Local::Habr::Cache;
 use strict;
 use warnings;
 use Cache::Memcached::Fast;
-use Mouse;
+use Moose;
 use feature 'say';
 use DDP;
 
@@ -25,28 +25,24 @@ our $VERSION = '1.00';
 
 =cut
 
-has memd => (is => 'rw', isa => 'Cache::Memcached::Fast');
+has memd => (is => 'rw', isa => 'Cache::Memcached::Fast', builder => '_build_memd', lazy => 1);
 has server => (is => 'ro', isa => 'Str', default => '127.0.0.1:11212');
 
-
-sub init {
-	my $self = shift;
-
-	$self->{memd} = Cache::Memcached::Fast->new({servers => [{address => $self->{server}}]});
+sub _build_memd {
+	my ($self) = @_;
+	return Cache::Memcached::Fast->new({servers => [{address => $self->{server}}]});
 }
 
 sub take_user {
-	my $self = shift;
-	my $user = shift;
+	my ($self, $user) = @_;
 
-	return $self->{memd}->get($user)
+	return $self->memd->get($user)
 }
 
 sub add_user {
-	my $self = shift;
-	my $user = shift;
+	my ($self, $user) = @_;
 
-	$self->{memd}->set($user->{username}, $user)
+	$self->memd->set($user->{username}, $user)
 }
 
 1;
