@@ -83,14 +83,9 @@ sub take_post {
 
 sub self_commentors {
 	my ($self) = @_;
-	my @self_com;
 
-	my $comments = $self->schema->resultset('Comment');
-	while (my $com = $comments->next) {
-		if ($com->post->author->username eq $com->commentor->username && !List::MoreUtils::any {$_->{username} eq $com->commentor->username} @self_com) {
-			push(@self_com, $self->_user_information($com->commentor))
-		}
-	}
+	my @self_com = $self->schema->resultset('User')->search({'me.username' => \'= comments.commentor'}, {join => {posts_2s => 'comments'}, distinct => 1});
+	for (@self_com) {$_ = $self->_user_information($_)}
 #select distinct username, karma, user.rating from user join post on post.author = user.username join comment on comment.post_id = post.id where post.author = comment.commentor
 	return @self_com;
 }
