@@ -1,4 +1,4 @@
-package Local::MusicLibrary;
+package Local::Source;
 
 use strict;
 use warnings;
@@ -7,7 +7,7 @@ use warnings;
 
 =head1 NAME
 
-Local::MusicLibrary - core music library module
+Local::Source
 
 =head1 VERSION
 
@@ -20,5 +20,7 @@ our $VERSION = '1.00';
 =head1 SYNOPSIS
 
 =cut
+
+use parent qw(Local::Object);
 
 1;
